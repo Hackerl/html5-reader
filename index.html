@@ -362,7 +362,7 @@
         $.get('data/chapter.json', function(data) {
           Chapter_id = Util.StorageGetter('last_chapter_id')
           if (Chapter_id == null) {
-            Chapter_id = data.chapters[1].chapter_id;
+            Chapter_id = data.chapters[0].chapter_id;
           }
           ChapterTotal = data.chapters.length;
           callback && callback();
@@ -370,51 +370,63 @@
       }
       var getChapterContent = function(chapter_id, callback) {
         $.get('data/data' + chapter_id + '.json', function(data) {
-          if (data.result == 0) {
-            var url = data.jsonp;
-            Util.getJSONP(url, function(data) {
-              callback && callback(data);
-            });
+          if (data.result == 0)
+          {
+            callback && callback(data.content);
           }
         }, 'json');
       }
+      var updateChapterBtn = function()
+      {
+            $('.prev-btn').text(Chapter_id == 0 ? "" : "上一章");
+            $('.next-btn').text(Chapter_id == ChapterTotal - 1 ? "" : "下一章");
+      }
       var prevChapter = function(UIcallback) {
         Chapter_id = parseInt(Chapter_id, 10);
-        if (Chapter_id == 1) {
+        if (Chapter_id == 0) {
           return;
         }
         Chapter_id -= 1;
         getChapterContent(Chapter_id, UIcallback);
-        Util.StorageSetter('last_chapter_id', Chapter_id)
+        Util.StorageSetter('last_chapter_id', Chapter_id);
       }
       var nextChapter = function(UIcallback) {
         Chapter_id = parseInt(Chapter_id, 10);
-        if (Chapter_id == ChapterTotal) {
+        if (Chapter_id == ChapterTotal - 1) {
           return;
         }
         Chapter_id += 1;
         getChapterContent(Chapter_id, UIcallback);
-        Util.StorageSetter('last_chapter_id', Chapter_id)
+        Util.StorageSetter('last_chapter_id', Chapter_id);
       }
       return {
         init: init,
         prevChapter: prevChapter,
-        nextChapter: nextChapter
+        nextChapter: nextChapter,
+        updateChapterBtn: updateChapterBtn,
       };
 
     }
 
     function ReaderBaseFrame(container) {
-      var parseChapterData = function(jsonData) {
-        var jsonObj = JSON.parse(jsonData);
+      var parseChapterData = function(jsonObj) {
         var html = '<h4>' + jsonObj.t + '</h4>';
         for (var key in jsonObj.p) {
-          html += '<p>' + jsonObj.p[key] + '</p>';
+          if (jsonObj.p[key] != "")
+          {
+            html += '<p>' + jsonObj.p[key] + '</p>';
+          }
+          else
+          {
+            html += '<p>' + '<br>' + '</p>';
+          }
         }
         return html;
       }
       return function(data) {
         container.html(parseChapterData(data));
+        $(window).scrollTop(0);
+        readerModel.updateChapterBtn();
       }
     }
 
